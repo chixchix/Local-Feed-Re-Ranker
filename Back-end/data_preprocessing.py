@@ -22,11 +22,11 @@ def preprocess_allsides(input_csv_path, output_json_path):
     # Standardize the Stance Variable to numerical values for the Submodular Optimization loop
     # Maps text labels to: -1 (Left), 0 (Neutral/Center), +1 (Right)
     stance_mapping = {
-        'Left': -1,
-        'Lean Left': -1,
-        'Center': 0,
-        'Lean Right': 1,
-        'Right': 1
+        'left': -1,
+        'leaning-left': -1,
+        'center': 0,
+        'leaning-right': 1,
+        'right': 1
     }
     df['stance'] = df['raw_stance'].map(stance_mapping)
     
@@ -43,4 +43,4 @@ def preprocess_allsides(input_csv_path, output_json_path):
     print(f"Data successfully preprocessed and exported to {output_json_path}!")
 
 # Example usage:
-# preprocess_allsides("bias_clean.csv", "mock_database.json")
+preprocess_allsides("bias_clean.csv", "mock_database.json")
