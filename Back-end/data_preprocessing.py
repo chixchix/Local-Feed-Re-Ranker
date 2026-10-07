@@ -2,36 +2,30 @@ import pandas as pd
 
 def preprocess_allsides(input_csv_path, output_json_path):
     # 1. Load the Dataset
-    # Read the AllSides CSV file into a Pandas DataFrame
+    # Read the "bias_clean.csv" file into a Pandas DataFrame
     df = pd.read_csv(input_csv_path)
     
-    # 2. Rename Columns
-    # Ensure the column names match your standardized schema
-    # Note: Adjust the original column names (keys) to match your specific downloaded CSV
+    # 2. Rename Columns to Match the Schema
+    # Map the actual columns from bias_clean.csv to the required unified schema
     df = df.rename(columns={
-        'id_column': 'id',
-        'raw_text_or_headline': 'text',
-        'topic_category': 'topic',
-        'bias_label': 'raw_stance'
+        'url': 'id',             # Using URL as the unique ID
+        'page_text': 'text',     # Using the body of the article as the text
+        'bias': 'raw_stance'     # Renaming bias to stance for the mapping step
     })
     
-    # 3. Extract Relevant Columns
-    # Filter the DataFrame to keep only the required fields
-    cols_to_keep = ['id', 'text', 'topic', 'raw_stance']
+    # Note: 'topic' is already named correctly in bias_clean.csv, so it doesn't need renaming
     
-    # Include engagement metrics if they are available in your dataset
-    if 'engagement_metric' in df.columns:
-        df = df.rename(columns={'engagement_metric': 'engagement'})
-        cols_to_keep.append('engagement')
-        
+    # 3. Extract Relevant Columns
+    cols_to_keep = ['id', 'text', 'topic', 'raw_stance']
     df = df[cols_to_keep]
     
-    # Standardize the Stance Variable to numerical values
-    # -1 (Left), 0 (Neutral), +1 (Right)
+    # Standardize the Stance Variable to numerical values for the Submodular Optimization loop
+    # Maps text labels to: -1 (Left), 0 (Neutral/Center), +1 (Right)
     stance_mapping = {
         'Left': -1,
+        'Lean Left': -1,
         'Center': 0,
-        'Neutral': 0,
+        'Lean Right': 1,
         'Right': 1
     }
     df['stance'] = df['raw_stance'].map(stance_mapping)
@@ -39,14 +33,14 @@ def preprocess_allsides(input_csv_path, output_json_path):
     # Drop the original text-based stance column to keep the schema clean
     df = df.drop(columns=['raw_stance'])
     
-    # (Optional) Drop any rows with missing essential data
+    # Clean up: Drop any rows with missing essential data
     df = df.dropna(subset=['text', 'topic', 'stance'])
     
     # 4. Export to JSON
-    # Export the cleaned DataFrame to a single file, such as mock_database.json
+    # Export the cleaned DataFrame to act as the backend mock database
     df.to_json(output_json_path, orient="records", indent=2)
     
     print(f"Data successfully preprocessed and exported to {output_json_path}!")
 
 # Example usage:
-# preprocess_allsides("allsides_raw_data.csv", "mock_database.json")
+# preprocess_allsides("bias_clean.csv", "mock_database.json")
