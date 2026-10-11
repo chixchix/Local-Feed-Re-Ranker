@@ -23,9 +23,15 @@ def preprocess_allsides(input_csv_path, output_json_path):
     # Maps text labels to: -1 (Left), 0 (Neutral/Center), +1 (Right)
     stance_mapping = {
         'left': -1,
+<<<<<<< HEAD
         'leaning-left': -1,
         'center': 0,
         'leaning-right': 1,
+=======
+        'leaning-left': -0.5,
+        'center': 0,
+        'leaning-right': 0.5,
+>>>>>>> 707b06a (added reranker_engine.py, changes made to data_preprocessing.py and mock_database.json: left-leaning is -0.5 and right-leaning is 0.5)
         'right': 1
     }
     df['stance'] = df['raw_stance'].map(stance_mapping)
