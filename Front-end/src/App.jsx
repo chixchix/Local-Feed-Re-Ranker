@@ -1,8 +1,8 @@
-//import { useState } from 'react';
+import { useState } from 'react';
 import PostCard from './components/PostCard.jsx';
 import './App.css';
 
-// The demo filler data of right and left wing and netural posts
+// The demo filler data of right and left wing and netural posts. It includes the post id, name, username, initials, time posted, text, topic, and political lean.
 const posts = [
   {
     id: 'post-1',
@@ -36,7 +36,22 @@ const posts = [
   },
 ];
 
+const standardPosts = posts;
+
+// A temporary order for the demo posts
+// the real reranker is not connected yet.
+const balancedDemoPosts = [posts[2], posts[0], posts[1]];
+
 export default function App() {
+  const [feedMode, setFeedMode] = useState('standard');
+
+  // If the feed mode is set to standard, then the posts visible are standard. Otherwise, if set to balanced, the posts visible are balanced
+  const visiblePosts = feedMode === 'standard'
+    ? standardPosts
+    : balancedDemoPosts;
+
+  // Displays the posts in the feed
+  // .map function iterates the array and creates a PostCard component for each post.
   return (
     <main className="feed-demo">
       <header className="page-heading">
@@ -44,16 +59,41 @@ export default function App() {
         <h1>Your feed</h1>
       </header>
 
-      <p className="demo-note">
-        Sample posts for interface development.
+      <div className="feed-toolbar">
+        <div
+          className="feed-switch"
+          role="group"
+          aria-label="Choose feed view"
+        >
+          <button
+            type="button"
+            aria-pressed={feedMode === 'standard'}
+            onClick={() => setFeedMode('standard')}
+          >
+            Standard feed
+          </button>
+
+          <button
+            type="button"
+            aria-pressed={feedMode === 'balanced'}
+            onClick={() => setFeedMode('balanced')}
+          >
+            Balanced feed
+          </button>
+        </div>
+      </div>
+
+      <p className="demo-note" aria-live="polite">
+        {feedMode === 'standard'
+          ? 'Standard feed: sample demo posts.'
+          : 'Balanced feed: predefined order. Reranker not connected yet.'}
       </p>
 
-      <section aria-label="Sample feed posts">
-        {posts.map((post, index) => (
+      <section aria-label={`${feedMode} feed posts`}>
+        {visiblePosts.map((post) => (
           <PostCard
             key={post.id}
             post={post}
-            rank={index + 1}
           />
         ))}
       </section>
