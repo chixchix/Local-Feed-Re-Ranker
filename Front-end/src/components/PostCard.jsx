@@ -1,4 +1,4 @@
-export default function PostCard({ post, rank }) {
+export default function PostCard({ post }) {
   return (
     <article className="post">
       <div className="post-avatar" aria-hidden="true">{post.initials}</div>
@@ -12,7 +12,6 @@ export default function PostCard({ post, rank }) {
             </div>
             <p className="post-time">{post.time}</p>
           </div>
-          <span className="post-rank" aria-label={`Rank ${rank}`}>#{rank}</span>
         </header>
 
         <p className="post-text">{post.text}</p>
