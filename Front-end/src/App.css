@@ -83,15 +83,6 @@
   margin: 3px 0 0;
 }
 
-.post-rank {
-  align-self: flex-start;
-  padding: 2px 7px;
-  border: 1px solid #e3e7df;
-  border-radius: 8px;
-  color: #62695f;
-  font-size: 12px;
-}
-
 .post-text {
   margin: 16px 0 20px;
   line-height: 1.6;
