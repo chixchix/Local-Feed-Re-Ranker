@@ -1,4 +1,4 @@
-# Submodular Diversity Reranker & News Preprocessing
+# Submodular Diversity Reranker & News Preprocessin
 
 This project provides an end-to-end pipeline to preprocess media bias datasets and perform submodular optimization to rerank news articles, balancing keyword relevance with ideological diversity.
 
