@@ -1,5 +1,5 @@
 .feed-demo {
-  max-width: 840px;
+  max-width: 1140px;
   margin: 40px auto;
   background: #fff;
   border: 1px solid #e3e7df;
@@ -182,5 +182,90 @@
   .feed-switch button {
     padding: 10px 12px;
     font-size: 14px;
+  }
+}
+
+.feed-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+}
+
+.feed-column {
+  min-width: 0;
+}
+
+.diversity-panel {
+  padding: 24px;
+  border-left: 1px solid #e3e7df;
+}
+
+.diversity-panel h2 {
+  margin: 0 0 24px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.diversity-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.diversity-label output {
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #dcf1c6;
+  color: #365c22;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.diversity-slider {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  accent-color: #527d34;
+  cursor: pointer;
+}
+
+.diversity-slider:focus-visible {
+  outline: 2px solid #527d34;
+  outline-offset: 4px;
+}
+
+.diversity-endpoints {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: #62695f;
+  font-size: 13px;
+}
+
+.diversity-panel p {
+  margin: 20px 0 0;
+  color: #62695f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.diversity-panel .diversity-demo-note {
+  font-size: 12px;
+}
+
+@media (max-width: 800px) {
+  .feed-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .diversity-panel {
+    grid-row: 1;
+    border-left: none;
+    border-bottom: 1px solid #e3e7df;
+    padding: 20px;
   }
 }
