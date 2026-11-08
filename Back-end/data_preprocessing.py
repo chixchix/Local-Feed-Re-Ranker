@@ -102,8 +102,13 @@ def preprocess_youtube_sentiment(output_json_path):
     df = df.rename(columns={'CommentText': 'text', 'Sentiment': 'raw_stance'})
     df['stance'] = df['raw_stance'].map(stance_mapping)
     
-    # Hardcode a general topic since these are broad YouTube comments
-    df['topic'] = "general_video"
+    # Dynamic Topic Assignment using VideoTitle (or CategoryID)
+    if "VideoTitle" in df.columns:
+        df["topic"] = df["VideoTitle"].fillna("general_video")
+    elif "CategoryID" in df.columns:
+        df["topic"] = df["CategoryID"].apply(lambda x: f"category_{x}")
+    else:
+        df["topic"] = "general_video"
     
     # Generate mock IDs
     df['id'] = [f"yt_comment_{i}" for i in range(len(df))]
@@ -118,12 +123,47 @@ def preprocess_youtube_sentiment(output_json_path):
     print(f"YouTube data successfully exported to {output_json_path}!")
 
 
+def preprocess_ibm_debater_argkp(input_csv_path, output_json_path):
+    """
+    Preprocesses IBM Debater dataset directly matching the CSV structure:
+    arg_id, argument, topic, stance
+    """
+    # 1. Read the CSV file
+    df = pd.read_csv(input_csv_path)
+    
+    # 2. Rename columns to match the reranker schema (id, text, topic, stance)
+    df = df.rename(columns={
+        'arg_id': 'id',
+        'argument': 'text'
+        # 'topic' and 'stance' are already named correctly!
+    })
+    
+    # 3. Ensure stance is a float (-1.0, 0.0, 1.0)
+    df['stance'] = df['stance'].astype(float)
+    
+    # 4. Filter and clean missing rows
+    cols_to_keep = ['id', 'text', 'topic', 'stance']
+    df = df.dropna(subset=['text', 'topic', 'stance'])
+    final_df = df[cols_to_keep]
+    
+    # 5. Export to JSON
+    final_df.to_json(output_json_path, orient="records", indent=2)
+    print(f"Data successfully preprocessed and exported to {output_json_path}!")
+
+
+    
  # Execution Block
 if __name__ == "__main__":
     # Example usage:
-    #preprocess_allsides("bias_clean.csv", "mock_database.json")
-    # 1. Run TweetEval
-    #preprocess_tweet_eval("tweet_eval_mock.json")
+
+    # 1. Run for News Articles
+    # preprocess_allsides("bias_clean.csv", "allsides_mock.json")
+
+    # 2. Run TweetEval
+    # preprocess_tweet_eval("tweet_eval_mock.json")
     
-    # 2. Run Cinelli (Ensure your downloaded OSF CSV is in the same folder)
-    preprocess_youtube_sentiment("youtube_mock.json")
+    # 3. Run Cinelli (Ensure your downloaded OSF CSV is in the same folder)
+    # preprocess_youtube_sentiment("youtube_mock.json")
+
+    # 4. Run IBM Debater / Perspectrum preprocessor
+    preprocess_ibm_debater_argkp("arguments_train.csv", "debater_mock.json")
