@@ -1,57 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PostCard from './components/PostCard.jsx';
 import DiversitySlider from './components/DiversitySlider.jsx';
 import './App.css';
+import { fetchFeed } from './api.js';
 
-// The demo filler data of right and left wing and netural posts. It includes the post id, name, username, initials, time posted, text, topic, and political lean.
-const posts = [
-  {
-    id: 'post-1',
-    name: 'John Smith',
-    handle: '@johnsmith',
-    initials: 'JS',
-    time: '5 mins ago',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Consequuntur aliquip aute aut qui sit qui quas quaerat enim adipiscing ex. Proident animi numquam dicta esse.',
-    topic: 'Transit',
-    lean: 'Left',
-  },
-  {
-    id: 'post-2',
-    name: 'Jane Smith',
-    handle: '@janesmith',
-    initials: 'JS',
-    time: '12 mins ago',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    topic: 'Election',
-    lean: 'Center',
-  },
-  {
-    id: 'post-3',
-    name: 'Doe Smith',
-    handle: '@doesmith',
-    initials: 'DS',
-    time: '25 mins ago',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Consequuntur aliquip aute aut qui sit qui quas quaerat enim adipiscing ex. Proident animi numquam dicta esse.',
-    topic: 'Budget',
-    lean: 'Right',
-  },
-];
+// Converts the numerical stance values of -1 - 1 to the corresponding stance labels for display
+function stanceToLabel(stance) {
+  const labels = {
+    '-1': 'Left',
+    '-0.5': 'Lean Left',
+    '0': 'Center',
+    '0.5': 'Lean Right',
+    '1': 'Right',
+  };
 
-const standardPosts = posts;
+  return labels[String(stance)] ?? 'Unknown';
+}
 
-// A temporary order for the demo posts
-// the real reranker is not connected yet.
-const balancedDemoPosts = [posts[2], posts[0], posts[1]];
-
+// Manages the state of the feed (feed mode, diversity weight, applied weight, visible posts, etc) and handles the fetching of posts
 export default function App() {
   const [feedMode, setFeedMode] = useState('standard');
-  const [diversityWeight, setDiversityWeight] = useState(0.5);
-  const [appliedWeight, setAppliedWeight] = useState(0.5);
+  const [diversityWeight, setDiversityWeight] = useState(0.5); // set to 0.5 as the default value for the diversity weight when app is loaded
+  const [appliedWeight, setAppliedWeight] = useState(0.5); // set to 0.5 as the default for the applied weight
 
-  // If the feed mode is set to standard, then the posts visible are standard. Otherwise, if set to balanced, the posts visible are balanced
-  const visiblePosts = feedMode === 'standard'
-    ? standardPosts
-    : balancedDemoPosts;
+  const [visiblePosts, setVisiblePosts] = useState([]); // stores the visible posts to display on feed
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+// Fetches the feed posts when the feed more or weights change
+// Updates the visible posts
+useEffect(() => {
+  let cancelled = false;
+
+  async function loadFeed() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const posts = await fetchFeed(feedMode, appliedWeight); // Fetches posts from the backend
+
+      // Maps the fetched posts to the postcard component. to be changed in the future to include more data
+      if (!cancelled) {
+        const mappedPosts = posts.map((post, index) => ({
+          id: post.id ?? `post-${index}`,
+          name: post.name ?? 'News Source',
+          handle: post.handle ?? '@news',
+          initials: post.initials ?? 'NS',
+          time: post.time ?? '',
+          text: post.text ?? '',
+          topic: post.topic ?? 'General',
+          lean: stanceToLabel(post.stance),
+        }));
+
+        setVisiblePosts(mappedPosts);
+
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setError(err.message);
+        setVisiblePosts([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  loadFeed();
+
+  return () => {
+    cancelled = true;
+  };
+}, [feedMode, appliedWeight]);
 
   // Handles the application of the diversity weight when the "Apply changes" button is clicked
   function handleApply() {
@@ -98,12 +119,17 @@ export default function App() {
 
           <p className="demo-note" aria-live="polite">
             {feedMode === 'standard'
-              ? 'Standard feed: sample demo posts.'
-              : 'Balanced feed: predefined order. Reranker not connected yet.'}
+              ? 'Standard feed'
+              : `Balanced feed - diversity weight: ${appliedWeight.toFixed(2)}`}
           </p>
 
           <section aria-label={`${feedMode} feed posts`}>
-            {visiblePosts.map((post) => (
+            {loading && <p>Loading feed...</p>}
+            {error && <p role="alert">Error: {error}</p>}
+            {!loading && !error && visiblePosts.length === 0 && (
+            <p>No posts available.</p>
+  )}
+            {!loading && !error && visiblePosts.map((post) => (
               <PostCard
                 key={post.id}
                 post={post}
