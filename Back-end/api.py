@@ -3,7 +3,13 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from reranker_engine import load_database, submodular_rerank
+from functools import lru_cache
+
+from reranker_double import (
+    load_database,
+    submodular_rerank,
+    get_or_create_vocab_cache,
+)
 
 # Creates FastAPI app to allow requests from the front-end
 app = FastAPI()
@@ -25,15 +31,49 @@ QUERY_WORDS = [
     "moral", "rights", "ethics"
 ]
 
-# If the file cannot be found after the dataset is loaded, it will return an error
+# Loads the candidate posts from the dataset
+## If the file cannot be found after the dataset is loaded, it will return an error
 def get_candidates():
     try:
         return load_database(str(DATA_FILE))
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
         raise HTTPException(
             status_code=500,
             detail=f"Dataset not found: {DATA_FILE.name}"
-        )
+        ) from exc
+
+# Helper function that builds a diverse candidate pool from opposing stances
+# Selects 15 posts from each of the opposing stances
+def get_diverse_candidates():
+    all_posts = get_candidates()
+
+    left_posts = [
+        post for post in all_posts
+        if float(post["stance"]) == -1.0
+    ][:15]
+
+    right_posts = [
+        post for post in all_posts
+        if float(post["stance"]) == 1.0
+    ][:15]
+
+    return left_posts + right_posts
+
+
+# Load and keep the candidate pool and embeddings in memory
+@lru_cache(maxsize=1)
+def get_balanced_resources():
+    candidates = get_diverse_candidates()
+
+    cache_path = BASE_DIR / "debater_vocab_cache.pt"
+
+    vocab_cache = get_or_create_vocab_cache(
+        candidates,
+        QUERY_WORDS,
+        cache_path=str(cache_path),
+    )
+
+    return candidates, vocab_cache
 
 # API ENDPOINT
 ## Returns the standard feed or balanced feed based on the selected mode
@@ -49,18 +89,20 @@ def get_feed(
         )
 
     # Temporary small candidate pool for initial integration
-    ## Uses the first 30 posts , to be changed
-    candidates = get_candidates()[:30]
 
     if mode == "balanced":
+        candidates, vocab_cache = get_balanced_resources()
+
         posts = submodular_rerank(
             candidates,
             QUERY_WORDS,
             lambda_stance=weight,
             lambda_topic=0.3,
             k=10,
+            vocab_cache=vocab_cache,
         )
     else:
-        posts = candidates[:10] ## Standard mode uses first 10 posts without reranking. To be changed as well
+        candidates = get_candidates()[:10]
+        posts = candidates
 
     return {"posts": posts}
